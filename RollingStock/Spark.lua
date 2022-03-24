@@ -11,9 +11,9 @@ function P:new(conf)
     _getmeantimebetween_s = conf.getmeantimebetween_s or function(aspeed_mps)
       -- Calibrated for 22 mph = 30 s, with a rapid falloff thereafter.
       if aspeed_mps == 0 then
-        return 90
+        return 60 * 60 * 24 * 365
       else
-        return math.min(300 / aspeed_mps, 90)
+        return 300 / aspeed_mps
       end
     end,
     _lasttick_s = nil,
