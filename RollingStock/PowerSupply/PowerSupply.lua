@@ -38,6 +38,8 @@ function P:new(conf)
       serviceable and available for use
       ]]
     _modes = conf.modes or {[0] = function(elec) return true end},
+    -- a dictionary that maps operating modes to player-friendly names
+    _modenames = conf.modenames or {[0] = "default"},
     -- executes when the controls have settled and the power supply has
     -- initialized
     _oninit = conf.oninit or function(p) end,
@@ -55,8 +57,10 @@ end
 
 local function getcv(self)
   if self._control ~= nil then
-    local v = RailWorks.GetControlValue(self._control, 0)
-    return self._readfn(v)
+    local rawv = RailWorks.GetControlValue(self._control, 0)
+    local v = self._readfn(rawv)
+    -- Control values can slew, so avoid returning an invalid value.
+    return self._modes[v] ~= nil and v or self._currentmode
   else
     return self._currentmode
   end
@@ -122,11 +126,21 @@ function P:update(_)
     self._getcantransition() then
     -- Initialize power transition.
     self._transitionstart = now
+    if RailWorks.GetIsEngineWithKey() then
+      Misc.showalert("Power supply",
+                     "Beginning switch to " ..
+                       string.upper(self._modenames[selmode]) .. ". " ..
+                       self._elec:getstatusmessage())
+    end
   elseif self._transitionstart ~= nil and now - self._transitionstart >
     self._transition_s then
     -- End the transition.
     self._currentmode = selmode
     self._transitionstart = nil
+    if RailWorks.GetIsEngineWithKey() then
+      Misc.showalert("Power supply", "Finished switching to " ..
+                       string.upper(self._modenames[selmode]) .. ".")
+    end
   end
 end
 

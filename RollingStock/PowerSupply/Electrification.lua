@@ -40,6 +40,21 @@ function P:new(conf)
   return o
 end
 
+-- Get a player-friendly message describing the current electrification status.
+function P:getstatusmessage()
+  local isthirdrail = self:isavailable(P.type.thirdrail)
+  local isoverhead = self:isavailable(P.type.overhead)
+  if isthirdrail and isoverhead then
+    return "Third rail and overhead power are available."
+  elseif isthirdrail then
+    return "Third rail power is available."
+  elseif isoverhead then
+    return "Overhead power is available."
+  else
+    return "Electric power is not available."
+  end
+end
+
 -- Check for the presence of a type of electrification.
 function P:isavailable(type)
   local control = self._controlmap[type]
@@ -74,7 +89,10 @@ local function readendcp(self, type, status)
     self:setavailable(type, false)
   end
   -- Fire the callback if warranted.
-  if change then self._onendchangepoint(type, status) end
+  if change then
+    Misc.showalert("Electrification", self:getstatusmessage())
+    self._onendchangepoint(type, status)
+  end
 end
 
 local function readautocp(self, cp) self._onautochangepoint(cp) end
